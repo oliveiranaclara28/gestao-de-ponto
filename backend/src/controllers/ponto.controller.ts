@@ -1,19 +1,21 @@
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma'; // Importe o prisma que criamos
+import { prisma } from '../lib/prisma';
 
 export const pontoController = {
-  // 1. Registrar Ponto com Prisma
+  // 1. Registrar Ponto
   registrar: async (req: Request, res: Response) => {
     try {
       const { funcionarioId, tipo } = req.body;
 
-      // Busca o último ponto do funcionário no banco
+      if (!prisma || !prisma.ponto) {
+        return res.status(500).json({ error: "Banco de dados não inicializado." });
+      }
+
       const ultimoPonto = await prisma.ponto.findFirst({
         where: { funcionarioId },
         orderBy: { dataHora: 'desc' },
       });
 
-      // Validação de negócio (bloqueio de duplicidade)
       if (ultimoPonto && ultimoPonto.tipo === tipo) {
         const msg = tipo === 'entrada' 
           ? 'Você já registrou uma ENTRADA. Registre uma SAÍDA antes.' 
@@ -21,45 +23,62 @@ export const pontoController = {
         return res.status(400).json({ error: msg });
       }
 
-      // Cria o registro no PostgreSQL
       const novoPonto = await prisma.ponto.create({
         data: { funcionarioId, tipo }
       });
 
       return res.status(201).json(novoPonto);
     } catch (error) {
-      return res.status(500).json({ error: 'Erro ao registrar ponto no banco.' });
+      console.error("Erro ao registrar ponto:", error);
+      return res.status(500).json({ error: 'Erro interno ao registrar ponto.' });
     }
   },
 
-  // 2. Listar todos com JOIN (o Prisma faz o include!)
+  // 2. Listar todos
   listarTodos: async (req: Request, res: Response) => {
-    const pontos = await prisma.ponto.findMany({
-      include: { funcionario: true } // Traz os dados do funcionário junto!
-    });
-    return res.json(pontos);
+    try {
+      if (!prisma || !prisma.ponto) throw new Error("Prisma não inicializado");
+      
+      const pontos = await prisma.ponto.findMany({
+        include: { funcionario: true }
+      });
+      return res.json(pontos);
+    } catch (error) {
+      return res.status(500).json({ error: 'Erro ao buscar pontos.' });
+    }
   },
 
-  // 3. Calcular Horas (Query poderosa direto no banco)
-  calcularHoras: async (req: Request, res: Response) => {
-    const { id } = req.params;
-    
-    const pontos = await prisma.ponto.findMany({
-      where: { funcionarioId: id },
-      orderBy: { dataHora: 'asc' }
-    });
-
-    const funcionario = await prisma.funcionario.findUnique({ where: { id } });
-
-    // ... (Aqui você mantém a sua lógica de cálculo de minutosTotais que já funcionava)
-    // O Prisma já entregou os dados ordenados, o resto é a sua regra de cálculo!
-    
-    return res.json({ /* ... seu objeto de resposta ... */ });
-  },
-
+  // 3. Buscar por funcionário
   buscarPorFuncionario: async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const pontos = await prisma.ponto.findMany({ where: { funcionarioId: id } });
-    return res.json(pontos);
+    try {
+      const { id } = req.params;
+      if (!prisma || !prisma.ponto) throw new Error("Prisma não inicializado");
+
+      const pontos = await prisma.ponto.findMany({ 
+        where: { funcionarioId: id } 
+      });
+      return res.json(pontos);
+    } catch (error) {
+      return res.status(500).json({ error: 'Erro ao buscar pontos do funcionário.' });
+    }
+  },
+
+  // 4. Calcular Horas (Estrutura base para sua lógica)
+  calcularHoras: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      if (!prisma || !prisma.ponto || !prisma.funcionario) throw new Error("Prisma não inicializado");
+
+      const pontos = await prisma.ponto.findMany({
+        where: { funcionarioId: id },
+        orderBy: { dataHora: 'asc' }
+      });
+
+      const funcionario = await prisma.funcionario.findUnique({ where: { id } });
+      
+      return res.json({ funcionario, pontos, message: "Lógica de cálculo pendente." });
+    } catch (error) {
+      return res.status(500).json({ error: 'Erro ao calcular horas.' });
+    }
   }
 };
