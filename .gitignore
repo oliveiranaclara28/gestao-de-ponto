@@ -3,3 +3,14 @@ node_modules
 .env
 
 /src/generated/prisma
+.vscode/
+.env
+*.env
+node_modules/
+node_modules/
+.env
+.env.local
+dist/
+*.log
+.DS_Store
+Thumbs.db
