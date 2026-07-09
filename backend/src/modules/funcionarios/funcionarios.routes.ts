@@ -25,6 +25,13 @@ funcionariosRoutes.get(
   funcionariosController.buscarPorId
 );
 
+// GET /funcionarios/:id/historico -- listar histórico de cargo e estabelecimento
+funcionariosRoutes.get(
+  '/:id/historico',
+  funcionariosValidator.validarIdParam,
+  funcionariosController.listarHistorico
+);
+
 // PUT /funcionarios/:id -- atualizar
 funcionariosRoutes.put(
   '/:id',
@@ -56,6 +63,16 @@ funcionariosRoutes.get(
 );
 
 // DELETE /funcionarios/fotos/:fotoId -- remover uma foto específica
-funcionariosRoutes.delete('/fotos/:fotoId', funcionariosController.removerFoto);
+funcionariosRoutes.delete(
+  '/fotos/:fotoId',
+  funcionariosController.removerFoto
+);
+
+// GET /funcionarios/:id/historico -- histórico de cargo/estabelecimento
+funcionariosRoutes.get(
+  '/:id/historico',
+  funcionariosValidator.validarIdParam,
+  funcionariosController.listarHistorico
+);
 
 export { funcionariosRoutes };
