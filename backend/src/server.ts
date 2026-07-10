@@ -4,6 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import { funcionariosRoutes } from './modules/funcionarios/funcionarios.routes';
 import { pontosRoutes } from './modules/pontos/pontos.routes';
+import { aprovacoesRoutes } from './modules/aprovacoes/aprovacoes.routes';   // ← LINHA NOVA
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/funcionarios', funcionariosRoutes);
 app.use('/pontos', pontosRoutes);
+app.use('/aprovacoes', aprovacoesRoutes);   // ← LINHA NOVA
 
 app.listen(env.PORT, () => {
   console.log(`Servidor rodando na porta ${env.PORT}`);
