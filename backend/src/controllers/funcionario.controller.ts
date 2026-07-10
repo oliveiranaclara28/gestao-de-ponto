@@ -1,77 +1,43 @@
 import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
+import bcrypt from 'bcryptjs';
+import { Papel } from '@prisma/client';
 
-// Nosso banco de dados falso em memória
-export const funcionariosSalvos: any[] = [];
+console.log("--- TESTE: ESTE ARQUIVO ESTÁ SENDO LIDO! ---");
 
 export const funcionarioController = {
-  // Lógica para cadastrar um funcionário
-  criar: (req: Request, res: Response) => {
-    const { nome, cargo, email } = req.body;
+  criar: async (req: Request, res: Response) => {
+    try {
+      // Se isso imprimir undefined no terminal, seu express.json() no server.ts não está funcionando
+      if (!req.body || Object.keys(req.body).length === 0) {
+        return res.status(400).json({ error: "Corpo da requisição vazio. Verifique o JSON no Thunder Client." });
+      }
 
-    if (!nome || !cargo || !email) {
-      return res.status(400).json({ error: 'Nome, cargo e email são obrigatórios.' });
+      const { nome, cpf, email, senha, matricula, cargo, estabelecimento, dataAdmissao, salario, papel, telefone, endereco } = req.body;
+
+      if (!senha) {
+        return res.status(400).json({ error: "Senha é obrigatória." });
+      }
+
+      const senhaHash = await bcrypt.hash(senha, 10);
+
+      const novoFuncionario = await prisma.funcionario.create({
+        data: {
+          nome, cpf, email, senhaHash, matricula, cargo, estabelecimento,
+          dataAdmissao: new Date(dataAdmissao),
+          salario: Number(salario),
+          papel: papel as Papel,
+          telefone,
+          endereco
+        }
+      });
+
+      const { senhaHash: _, ...funcionarioSemSenha } = novoFuncionario;
+      return res.status(201).json(funcionarioSemSenha);
+
+    } catch (error: any) {
+      console.error("Erro no cadastro:", error);
+      return res.status(500).json({ error: "Erro interno.", detalhes: error.message });
     }
-
-    const novoFuncionario = {
-      id: Date.now().toString(),
-      nome,
-      cargo,
-      email,
-      dataCriacao: new Date()
-    };
-
-    funcionariosSalvos.push(novoFuncionario);
-
-    return res.status(201).json({
-      mensagem: '🎉 Funcionário cadastrado com sucesso (em memória)!',
-      funcionario: novoFuncionario
-    });
-  },
-
-  // Lógica para listar todos os funcionários
-  listar: (req: Request, res: Response) => {
-    return res.json(funcionariosSalvos);
-  },
-
-  // NOVA FUNÇÃO: Atualizar dados do funcionário
-  atualizar: (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { nome, cargo, email } = req.body;
-
-    // Encontra o funcionário pelo ID
-    const funcionario = funcionariosSalvos.find(f => f.id === id);
-
-    if (!funcionario) {
-      return res.status(404).json({ error: 'Funcionário não encontrado.' });
-    }
-
-    // Atualiza apenas os campos que forem enviados no corpo da requisição
-    if (nome) funcionario.nome = nome;
-    if (cargo) funcionario.cargo = cargo;
-    if (email) funcionario.email = email;
-
-    return res.json({
-      mensagem: '🔄 Funcionário atualizado com sucesso!',
-      funcionario
-    });
-  },
-
-  // NOVA FUNÇÃO: Remover/Inativar funcionário do sistema
-  deletar: (req: Request, res: Response) => {
-    const { id } = req.params;
-
-    // Encontra o índice do funcionário na lista
-    const indice = funcionariosSalvos.findIndex(f => f.id === id);
-
-    if (indice === -1) {
-      return res.status(404).json({ error: 'Funcionário não encontrado.' });
-    }
-
-    // Remove o funcionário da nossa lista em memória
-    const funcionarioRemovido = funcionariosSalvos.splice(indice, 1);
-
-    return res.json({
-      mensagem: `❌ Funcionário ${funcionarioRemovido[0].nome} foi removido com sucesso.`
-    });
   }
 };

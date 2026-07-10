@@ -1,9 +1,19 @@
-import { Router } from 'express'; // 1. Importação necessária
-import { funcionarioRouter } from './funcionario.routes';
-import { pontoRouter } from './ponto.routes';
+import { Router } from 'express';
+import { funcionarioController } from '../controllers/funcionario.controller';
+import { authController } from '../controllers/auth.controller';
+import { authMiddleware } from '../middlewares/auth.middleware';
+import { roleMiddleware } from '../middlewares/role.middleware';
+import { Papel } from '@prisma/client';
 
-export const routes = Router(); // 2. Agora o Router é reconhecido
+const routes = Router();
 
-// 3. Use os nomes exatos que você exportou nos outros arquivos
-routes.use(funcionarioRouter);
-routes.use(pontoRouter);
+routes.post('/auth/login', authController.login);
+
+routes.post(
+  '/funcionarios', 
+  authMiddleware, 
+  roleMiddleware([Papel.ADMINISTRADOR, Papel.RH]), 
+  funcionarioController.criar
+);
+
+export { routes };
