@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Papel {
+  ADMINISTRADOR
+  GESTOR
+  RH
+  FUNCIONARIO
+}
+
+enum TipoPonto {
+  ENTRADA
+  SAIDA_ALMOCO
+  RETORNO
+  SAIDA
+}
+
+enum StatusPonto {
+  PENDENTE
+  APROVADO
+  REJEITADO
+}
+
+enum StatusAprovacao {
+  APROVADO
+  REJEITADO
+}
+
+model Funcionario {
+  id              String   @id @default(uuid())
+  nome            String
+  cpf             String   @unique
+  email           String   @unique
+  senhaHash       String
+  telefone        String?
+  endereco        String?
+  matricula       String   @unique
+  cargo           String
+  estabelecimento String
+  dataAdmissao    DateTime
+  salario         Decimal
+  papel           Papel
+  status          String   @default("ATIVO")
+
+  // Auto-relacionamento: cada funcionário pode ter um gestor
+  // (que também é um Funcionario), usado para saber quem aprova
+  // os pontos de quem.
+  gestorId        String?
+  gestor          Funcionario?  @relation("GestorFuncionario", fields: [gestorId], references: [id])
+  subordinados    Funcionario[] @relation("GestorFuncionario")
+
+  fotos           FotoReferenciaFacial[]
+  historicoCargos HistoricoCargoSetor[]
+  pontos          Ponto[]
+  aprovacoesFeitas Aprovacao[]  @relation("GestorAprovacao")
+
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
+}
+
+model FotoReferenciaFacial {
+  id            String      @id @default(uuid())
+  fotoUrl       String
+  ordem         Int
+  funcionarioId String
+  funcionario   Funcionario @relation(fields: [funcionarioId], references: [id])
+
+  criadoEm      DateTime    @default(now())
+}
+
+model HistoricoCargoSetor {
+  id              String      @id @default(uuid())
+  funcionarioId   String
+  funcionario     Funcionario @relation(fields: [funcionarioId], references: [id])
+
+  cargo           String
+  estabelecimento String
+  dataInicio      DateTime
+  dataFim         DateTime?
+
+  criadoEm        DateTime    @default(now())
+}
+
+model Ponto {
+  id            String      @id @default(uuid())
+  funcionarioId String
+  funcionario   Funcionario @relation(fields: [funcionarioId], references: [id])
+
+  tipo          TipoPonto
+  dataHora      DateTime
+  fotoUrl       String
+  status        StatusPonto @default(PENDENTE)
+
+  aprovacoes    Aprovacao[]
+
+  criadoEm      DateTime    @default(now())
+}
+
+model Aprovacao {
+  id              String          @id @default(uuid())
+
+  pontoId         String
+  ponto           Ponto           @relation(fields: [pontoId], references: [id])
+
+  // Segundo relacionamento com Funcionario no mesmo model -- por isso
+  // também precisa de um nome ("GestorAprovacao") pra diferenciar do
+  // relacionamento gestor/subordinados lá em cima.
+  gestorId        String
+  gestor          Funcionario     @relation("GestorAprovacao", fields: [gestorId], references: [id])
+
+  status          StatusAprovacao
+  motivoRejeicao  String?
+
+  dataAprovacao   DateTime        @default(now())
+}
