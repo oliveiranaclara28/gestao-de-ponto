@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
     "target": "ES2022",
     "module": "commonjs",
     "lib": ["ES2022"],
@@ -17,7 +16,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
 
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
+    "types": ["node"],
     "declaration": false,
     "sourceMap": true
   },

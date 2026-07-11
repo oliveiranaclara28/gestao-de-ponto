@@ -1,8 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -51,9 +49,6 @@ model Funcionario {
   papel           Papel
   status          String   @default("ATIVO")
 
-  // Auto-relacionamento: cada funcionário pode ter um gestor
-  // (que também é um Funcionario), usado para saber quem aprova
-  // os pontos de quem.
   gestorId        String?
   gestor          Funcionario?  @relation("GestorFuncionario", fields: [gestorId], references: [id])
   subordinados    Funcionario[] @relation("GestorFuncionario")
@@ -111,9 +106,6 @@ model Aprovacao {
   pontoId         String
   ponto           Ponto           @relation(fields: [pontoId], references: [id])
 
-  // Segundo relacionamento com Funcionario no mesmo model -- por isso
-  // também precisa de um nome ("GestorAprovacao") pra diferenciar do
-  // relacionamento gestor/subordinados lá em cima.
   gestorId        String
   gestor          Funcionario     @relation("GestorAprovacao", fields: [gestorId], references: [id])
 
