@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { Papel } from '@prisma/client';
+import { Papel } from '../generated/prisma/enums';
 
 export const roleMiddleware = (papeisPermitidos: Papel[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
