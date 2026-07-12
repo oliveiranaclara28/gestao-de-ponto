@@ -2,6 +2,21 @@
 
 import { Request, Response } from 'express';
 import { relatoriosService } from './relatorios.service';
+import { logger } from '../../config/logger';
+
+// "Funcionário não encontrado" é o único erro esperado que o Service
+// lança de propósito -- qualquer outro erro é inesperado, e merece
+// virar 500 com log, em vez de um 404 enganoso.
+function tratarErroDeRelatorio(erro: unknown, res: Response) {
+  const mensagem = (erro as Error).message;
+
+  if (mensagem === 'Funcionário não encontrado.') {
+    return res.status(404).json({ error: mensagem });
+  }
+
+  logger.error({ erro }, 'Erro ao gerar relatório');
+  return res.status(500).json({ error: 'Erro ao gerar relatório.' });
+}
 
 export const relatoriosController = {
   gerarRelatorioFuncionario: async (req: Request, res: Response) => {
@@ -14,7 +29,7 @@ export const relatoriosController = {
       );
       return res.json(relatorio);
     } catch (erro) {
-      return res.status(404).json({ error: (erro as Error).message });
+      return tratarErroDeRelatorio(erro, res);
     }
   },
 
@@ -31,7 +46,7 @@ export const relatoriosController = {
       res.setHeader('Content-Disposition', 'attachment; filename="relatorio.pdf"');
       return res.send(pdfBuffer);
     } catch (erro) {
-      return res.status(404).json({ error: (erro as Error).message });
+      return tratarErroDeRelatorio(erro, res);
     }
   },
 
@@ -48,8 +63,7 @@ export const relatoriosController = {
       res.setHeader('Content-Disposition', 'attachment; filename="relatorio.xlsx"');
       return res.send(excelBuffer);
     } catch (erro) {
-      return res.status(404).json({ error: (erro as Error).message });
+      return tratarErroDeRelatorio(erro, res);
     }
   },
-
 };

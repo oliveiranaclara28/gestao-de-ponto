@@ -2,6 +2,7 @@
 
 import { Request, Response } from 'express';
 import { dashboardService } from './dashboard.service';
+import { logger } from '../../config/logger';
 
 export const dashboardController = {
   obterResumo: async (_req: Request, res: Response) => {
@@ -9,7 +10,7 @@ export const dashboardController = {
       const resumo = await dashboardService.obterResumo();
       return res.json(resumo);
     } catch (erro) {
-      console.error('Erro ao gerar dashboard:', erro);
+      logger.error({ erro }, 'Erro ao gerar dashboard');
       return res.status(500).json({ error: 'Erro ao gerar dashboard.' });
     }
   },
