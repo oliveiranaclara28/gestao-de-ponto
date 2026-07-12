@@ -2,6 +2,7 @@
 
 import { Request, Response } from "express";
 import { pontosService } from "./pontos.service";
+import { logger } from "../../config/logger";
 
 export const pontosController = {
   registrar: async (req: Request, res: Response) => {
@@ -10,7 +11,7 @@ export const pontosController = {
       const ponto = await pontosService.registrar(funcionarioId, tipo, fotoUrl);
       return res.status(201).json(ponto);
     } catch (erro) {
-      console.error("Erro ao registrar ponto:", erro);
+      logger.error({ erro }, "Erro ao registrar ponto");
       return res.status(400).json({ error: (erro as Error).message });
     }
   },
@@ -20,7 +21,7 @@ export const pontosController = {
       const pontos = await pontosService.listarTodos();
       return res.json(pontos);
     } catch (erro) {
-      console.error("Erro ao listar pontos:", erro);
+      logger.error({ erro }, "Erro ao listar pontos");
       return res.status(500).json({ error: "Erro ao buscar pontos." });
     }
   },
