@@ -1,11 +1,11 @@
-import { prisma } from '../../config/database';
-import { TipoPonto } from '../../generated/prisma/enums';
+import { prisma } from "../../config/database";
+import { TipoPonto } from "../../generated/prisma/enums";
 
 export const pontosRepository = {
   buscarUltimoPonto: (funcionarioId: string) => {
     return prisma.ponto.findFirst({
       where: { funcionarioId },
-      orderBy: { dataHora: 'desc' },
+      orderBy: { dataHora: "desc" },
     });
   },
 
@@ -23,14 +23,28 @@ export const pontosRepository = {
   listarTodos: () => {
     return prisma.ponto.findMany({
       include: { funcionario: true },
-      orderBy: { dataHora: 'desc' },
+      orderBy: { dataHora: "desc" },
     });
   },
 
   listarPorFuncionario: (funcionarioId: string) => {
     return prisma.ponto.findMany({
       where: { funcionarioId },
-      orderBy: { dataHora: 'asc' },
+      orderBy: { dataHora: "asc" },
+    });
+  },
+
+  listarPorFuncionarioNoPeriodo: (
+    funcionarioId: string,
+    dataInicio: Date,
+    dataFim: Date,
+  ) => {
+    return prisma.ponto.findMany({
+      where: {
+        funcionarioId,
+        dataHora: { gte: dataInicio, lte: dataFim },
+      },
+      orderBy: { dataHora: "asc" },
     });
   },
 };
