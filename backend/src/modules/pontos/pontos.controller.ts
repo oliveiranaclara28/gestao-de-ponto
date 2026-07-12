@@ -1,7 +1,7 @@
 // Controller: só orquestra a requisição -- recebe req, chama o Service, devolve res.
 
-import { Request, Response } from 'express';
-import { pontosService } from './pontos.service';
+import { Request, Response } from "express";
+import { pontosService } from "./pontos.service";
 
 export const pontosController = {
   registrar: async (req: Request, res: Response) => {
@@ -10,7 +10,7 @@ export const pontosController = {
       const ponto = await pontosService.registrar(funcionarioId, tipo, fotoUrl);
       return res.status(201).json(ponto);
     } catch (erro) {
-      console.error('Erro ao registrar ponto:', erro);
+      console.error("Erro ao registrar ponto:", erro);
       return res.status(400).json({ error: (erro as Error).message });
     }
   },
@@ -20,14 +20,16 @@ export const pontosController = {
       const pontos = await pontosService.listarTodos();
       return res.json(pontos);
     } catch (erro) {
-      console.error('Erro ao listar pontos:', erro);
-      return res.status(500).json({ error: 'Erro ao buscar pontos.' });
+      console.error("Erro ao listar pontos:", erro);
+      return res.status(500).json({ error: "Erro ao buscar pontos." });
     }
   },
 
   buscarPorFuncionario: async (req: Request, res: Response) => {
     try {
-      const pontos = await pontosService.listarPorFuncionario(req.params.id as string);
+      const pontos = await pontosService.listarPorFuncionario(
+        req.params.id as string,
+      );
       return res.json(pontos);
     } catch (erro) {
       return res.status(404).json({ error: (erro as Error).message });
@@ -36,7 +38,23 @@ export const pontosController = {
 
   calcularHoras: async (req: Request, res: Response) => {
     try {
-      const resultado = await pontosService.calcularHoras(req.params.id as string);
+      const resultado = await pontosService.calcularHoras(
+        req.params.id as string,
+      );
+      return res.json(resultado);
+    } catch (erro) {
+      return res.status(404).json({ error: (erro as Error).message });
+    }
+  },
+
+  calcularBancoDeHoras: async (req: Request, res: Response) => {
+    try {
+      const { dataInicio, dataFim } = req.query;
+      const resultado = await pontosService.calcularBancoDeHoras(
+        req.params.id as string,
+        new Date(dataInicio as string),
+        new Date(dataFim as string),
+      );
       return res.json(resultado);
     } catch (erro) {
       return res.status(404).json({ error: (erro as Error).message });
