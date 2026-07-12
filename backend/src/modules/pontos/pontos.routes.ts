@@ -1,42 +1,58 @@
-// Routes: define os endpoints HTTP e a ordem do pipeline Validator -> Controller.
+// Routes: define os endpoints HTTP e a ordem do pipeline Auth -> Validator -> Controller.
 
-import { Router } from "express";
-import { pontosController } from "./pontos.controller";
-import { pontosValidator } from "./pontos.validator";
+import { Router } from 'express';
+import { pontosController } from './pontos.controller';
+import { pontosValidator } from './pontos.validator';
+import { authMiddleware } from '../../middlewares/auth.middleware';
+import { roleMiddleware } from '../../middlewares/role.middleware';
+import { proprioOuPapel, soParaSiNoBody } from '../../middlewares/ownership.middleware';
+import { Papel } from '../../generated/prisma/enums';
 
 const pontosRoutes = Router();
 
-// POST /pontos -- registrar um novo ponto
+// POST /pontos -- registrar (qualquer autenticado, só o próprio ponto)
 pontosRoutes.post(
-  "/",
+  '/',
+  authMiddleware,
+  soParaSiNoBody('funcionarioId'),
   pontosValidator.validarRegistrar,
-  pontosController.registrar,
+  pontosController.registrar
 );
 
-// GET /pontos -- histórico geral (todos os funcionários)
-pontosRoutes.get("/", pontosController.listarTodos);
-
-// GET /pontos/:id/horas -- precisa vir ANTES da rota de :id genérico,
-// senão o Express interpretaria "horas" como se fosse um funcionarioId.
+// GET /pontos -- histórico geral, todos os funcionários (Admin, RH, Gestor)
 pontosRoutes.get(
-  "/:id/horas",
+  '/',
+  authMiddleware,
+  roleMiddleware([Papel.ADMINISTRADOR, Papel.RH, Papel.GESTOR]),
+  pontosController.listarTodos
+);
+
+// GET /pontos/:id/horas -- precisa vir ANTES da rota de :id genérico
+pontosRoutes.get(
+  '/:id/horas',
+  authMiddleware,
+  proprioOuPapel([Papel.ADMINISTRADOR, Papel.RH, Papel.GESTOR]),
   pontosValidator.validarIdParam,
-  pontosController.calcularHoras,
+  pontosController.calcularHoras
 );
 
-// GET /pontos/:id -- histórico de um funcionário específico
+// GET /pontos/:id -- histórico de um funcionário (o próprio, ou Admin/RH/Gestor)
 pontosRoutes.get(
-  "/:id",
+  '/:id',
+  authMiddleware,
+  proprioOuPapel([Papel.ADMINISTRADOR, Papel.RH, Papel.GESTOR]),
   pontosValidator.validarIdParam,
-  pontosController.buscarPorFuncionario,
+  pontosController.buscarPorFuncionario
 );
 
-// GET /pontos/:id/banco-de-horas?dataInicio=...&dataFim=... -- saldo do período
+// GET /pontos/:id/banco-de-horas (o próprio, ou Admin/RH/Gestor)
 pontosRoutes.get(
-  "/:id/banco-de-horas",
+  '/:id/banco-de-horas',
+  authMiddleware,
+  proprioOuPapel([Papel.ADMINISTRADOR, Papel.RH, Papel.GESTOR]),
   pontosValidator.validarIdParam,
   pontosValidator.validarPeriodo,
-  pontosController.calcularBancoDeHoras,
+  pontosController.calcularBancoDeHoras
 );
 
 export { pontosRoutes };
