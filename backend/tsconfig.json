@@ -17,7 +17,7 @@
     "forceConsistentCasingInFileNames": true,
 
     "moduleResolution": "bundler",
-    "types": ["node"],
+    "types": ["node", "jest"],
     "declaration": false,
     "sourceMap": true
   },
