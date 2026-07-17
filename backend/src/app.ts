@@ -3,6 +3,8 @@ import { logger } from './config/logger';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
 import { routes } from './routes';
 import { funcionariosRoutes } from './modules/funcionarios/funcionarios.routes';
 import { pontosRoutes } from './modules/pontos/pontos.routes';
@@ -18,6 +20,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(pinoHttp({ logger }));
 app.use(routes);
 
