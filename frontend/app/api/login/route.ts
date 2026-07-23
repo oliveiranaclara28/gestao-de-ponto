@@ -4,15 +4,27 @@ import axios from 'axios';
 
 export async function POST(request: Request) {
   try {
-    const { email, senha } = await request.json();
+    const body = await request.json();
+    console.log('-> Tentando fazer login para:', body.email);
+    console.log('-> URL do backend:', `${process.env.NEXT_PUBLIC_API_URL}/login`);
 
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-      email,
-      senha,
-    });
+    // Faz a requisição para o backend
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/login`, body);
+    console.log('-> Resposta bruta do backend de login:', response.data);
 
-    const { token } = response.data;
+    // Tenta capturar o token independentemente de qual nome o backend use
+    const token = 
+      response.data.token || 
+      response.data.access_token || 
+      response.data.accessToken || 
+      response.data.jwt;
 
+    if (!token) {
+      console.error('-> ERRO: O backend respondeu, mas não retornou nenhuma chave de token válida!');
+      return NextResponse.json({ message: 'Token não encontrado na resposta do servidor.' }, { status: 500 });
+    }
+
+    // Grava o cookie com o token
     const cookieStore = await cookies();
     cookieStore.set({
       name: 'ponto_certo_token',
@@ -20,12 +32,15 @@ export async function POST(request: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      maxAge: 60 * 60 * 8, // 8 horas de duração
+      maxAge: 60 * 60 * 24 * 7, // 7 dias
     });
 
-    return NextResponse.json({ message: 'Login realizado com sucesso!' });
+    console.log('-> Sucesso! Cookie ponto_certo_token gravado com sucesso.');
+    return NextResponse.json({ success: true, user: response.data.user || response.data.usuario });
   } catch (error: any) {
-    const errorMessage = error.response?.data?.message || 'Erro ao realizar login';
-    return NextResponse.json({ message: errorMessage }, { status: 401 });
+    console.error('-> ERRO NA ROTA DE LOGIN DO NEXT.JS:', error.response?.data || error.message);
+    const message = error.response?.data?.message || error.message || 'Credenciais inválidas';
+    const status = error.response?.status || 401;
+    return NextResponse.json({ message }, { status });
   }
 }

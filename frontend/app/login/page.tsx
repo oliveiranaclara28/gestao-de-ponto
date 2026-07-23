@@ -2,79 +2,82 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { api, AppError } from '@/services/api';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
+  const [carregando, setCarregando] = useState(false);
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErro('');
+    setCarregando(true);
 
     try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, senha }),
-      });
+      // Faz a chamada para a rota de login do backend
+      await api.post('/sessions', { email, senha });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Credenciais inválidas');
-      }
-
+      // Se der certo, redireciona para o dashboard
       router.push('/dashboard');
-    } catch (err: any) {
-      setErro(err.message);
+    } catch (err) {
+      if (err instanceof AppError) {
+        setErro(err.message);
+      } else {
+        setErro('Ocorreu um erro ao tentar fazer login. Tente novamente.');
+      }
+    } finally {
+      setCarregando(false);
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Ponto Certo</h1>
-          <p className="text-gray-600 text-sm mt-2">Acesse sua conta para bater o ponto</p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white px-4">
+      <div className="w-full max-w-md p-8 space-y-6 bg-gray-900 rounded-xl shadow-lg border border-gray-800">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold tracking-tight">Ponto Certo</h1>
+          <p className="text-sm text-gray-400 mt-2">Faça login para acessar o sistema</p>
         </div>
 
         {erro && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 text-sm rounded-md">
+          <div className="p-3 text-sm text-red-400 bg-red-950/50 border border-red-800 rounded-lg">
             {erro}
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">E-mail</label>
             <input
               type="email"
-              required
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-              placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="seu.email@empresa.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Senha</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Senha</label>
             <input
               type="password"
-              required
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-              placeholder="••••••••"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
+              required
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="••••••••"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            disabled={carregando}
+            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-200 disabled:opacity-50 cursor-pointer"
           >
-            Entrar
+            {carregando ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
       </div>
