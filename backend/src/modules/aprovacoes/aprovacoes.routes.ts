@@ -11,7 +11,33 @@ const aprovacoesRoutes = Router();
 
 const somenteGestaoDeAprovacao = roleMiddleware([Papel.ADMINISTRADOR, Papel.GESTOR]);
 
-// GET /aprovacoes/pendentes -- listagem de pontos aguardando decisão
+/**
+ * @swagger
+ * tags:
+ *   name: Aprovacoes
+ *   description: Aprovação ou rejeição de pontos pendentes por um gestor
+ */
+
+/**
+ * @swagger
+ * /aprovacoes/pendentes:
+ *   get:
+ *     summary: Lista os pontos aguardando decisão
+ *     tags: [Aprovacoes]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de pontos pendentes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Ponto'
+ *       403:
+ *         description: Papel do usuário não tem permissão (requer ADMINISTRADOR ou GESTOR)
+ */
 aprovacoesRoutes.get(
   '/pendentes',
   authMiddleware,
@@ -19,7 +45,46 @@ aprovacoesRoutes.get(
   aprovacoesController.listarPendentes
 );
 
-// PUT /aprovacoes/:id/aprovar -- :id aqui é o ID do Ponto
+/**
+ * @swagger
+ * /aprovacoes/{id}/aprovar:
+ *   put:
+ *     summary: Aprova um ponto pendente
+ *     description: '{id} aqui é o ID do Ponto. Só o gestor do funcionário dono do ponto pode decidir.'
+ *     tags: [Aprovacoes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/DecidirPontoInput'
+ *     responses:
+ *       200:
+ *         description: Ponto aprovado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Aprovacao'
+ *       400:
+ *         description: Dados ou ID inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErroValidacao'
+ *       403:
+ *         description: Papel do usuário não tem permissão, ou não é o gestor deste funcionário
+ *       404:
+ *         description: Ponto não encontrado
+ */
 aprovacoesRoutes.put(
   '/:id/aprovar',
   authMiddleware,
@@ -29,7 +94,46 @@ aprovacoesRoutes.put(
   aprovacoesController.aprovar
 );
 
-// PUT /aprovacoes/:id/rejeitar
+/**
+ * @swagger
+ * /aprovacoes/{id}/rejeitar:
+ *   put:
+ *     summary: Rejeita um ponto pendente
+ *     description: '{id} aqui é o ID do Ponto. Só o gestor do funcionário dono do ponto pode decidir.'
+ *     tags: [Aprovacoes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/DecidirPontoInput'
+ *     responses:
+ *       200:
+ *         description: Ponto rejeitado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Aprovacao'
+ *       400:
+ *         description: Dados ou ID inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErroValidacao'
+ *       403:
+ *         description: Papel do usuário não tem permissão, ou não é o gestor deste funcionário
+ *       404:
+ *         description: Ponto não encontrado
+ */
 aprovacoesRoutes.put(
   '/:id/rejeitar',
   authMiddleware,
@@ -39,7 +143,38 @@ aprovacoesRoutes.put(
   aprovacoesController.rejeitar
 );
 
-// GET /aprovacoes/:id/historico -- histórico de decisões sobre um ponto específico
+/**
+ * @swagger
+ * /aprovacoes/{id}/historico:
+ *   get:
+ *     summary: Lista o histórico de decisões sobre um ponto específico
+ *     description: '{id} aqui é o ID do Ponto.'
+ *     tags: [Aprovacoes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Histórico de aprovações/rejeições do ponto
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Aprovacao'
+ *       400:
+ *         description: ID inválido na URL
+ *       403:
+ *         description: Papel do usuário não tem permissão (requer ADMINISTRADOR ou GESTOR)
+ *       404:
+ *         description: Ponto não encontrado
+ */
 aprovacoesRoutes.get(
   '/:id/historico',
   authMiddleware,

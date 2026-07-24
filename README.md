@@ -1,98 +1,122 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Ponto Certo
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+SaaS de ponto eletrônico com reconhecimento facial. Sistema de gestão de jornada de trabalho, aprovações hierárquicas e relatórios, voltado para empresas que precisam controlar ponto de forma centralizada e auditável.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+> **Status:** backend em desenvolvimento ativo. Frontend ainda não iniciado (planejado em Next.js).
 
-## Description
+## Stack
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Runtime:** Node.js + Express 5 + TypeScript
+- **Banco de dados:** PostgreSQL, hospedado via Supabase (usado apenas como banco — autenticação e storage são feitos manualmente, sem os serviços de Auth/Storage do Supabase)
+- **ORM:** Prisma, com gerador customizado (`prisma-client`, não o padrão `prisma-client-js`) — o client gerado fica em `src/generated/prisma`
+- **Autenticação:** JWT (`jsonwebtoken`) + `bcryptjs`
+- **Validação:** Zod
+- **Upload de arquivos:** Multer (armazenamento local em `uploads/` por enquanto; migração para Cloudflare R2 está no backlog)
+- **Logs:** Pino (+ `pino-http` para logs de requisição, `pino-pretty` em desenvolvimento)
+- **Relatórios:** PDFKit (PDF) e ExcelJS (Excel)
+- **Testes:** Jest + ts-jest + Supertest
 
-## Project setup
+## Arquitetura do backend
 
-```bash
-$ npm install
+O backend é organizado **por domínio**, não por tipo de arquivo. Cada módulo de negócio vive em `src/modules/<nome>/` e segue sempre a mesma cadeia de responsabilidade:
+
+```
+<nome>.routes.ts  →  <nome>.validator.ts  →  <nome>.controller.ts  →  <nome>.service.ts  →  <nome>.repository.ts
 ```
 
-## Compile and run the project
+Regras de dependência entre as camadas:
+
+- O **Controller** nunca importa o Prisma diretamente — só chama o Service.
+- O **Service** nunca importa Express (`req`/`res`) — recebe dados, aplica regra de negócio, devolve dados.
+- O **Repository** é a única camada que importa o Prisma Client (`src/config/database.ts`).
+- Toda validação de entrada roda no **Validator**, como middleware, antes do Controller.
+
+Módulos existentes: `funcionarios`, `pontos`, `aprovacoes`, `dashboard`, `relatorios`, além de `auth` (login) e infraestrutura compartilhada em `src/shared/` e `src/middlewares/`.
+
+## Modelo de dados
+
+Definido em `prisma/schema.prisma`, com 5 entidades principais:
+
+- **Funcionario** — cadastro e login unificados, com papel (`ADMINISTRADOR`, `GESTOR`, `RH`, `FUNCIONARIO`) e hierarquia via auto-relacionamento (`gestorId`)
+- **FotoReferenciaFacial** — até 3 fotos de referência por funcionário
+- **HistoricoCargoSetor** — histórico automático de cargo/estabelecimento (`dataFim` nulo = registro atual)
+- **Ponto** — cada marcação de ponto, com foto de auditoria
+- **Aprovacao** — decisão do gestor sobre um ponto pendente, com motivo de rejeição opcional
+
+## Como rodar localmente
+
+### Pré-requisitos
+
+- Node.js
+- Uma instância PostgreSQL acessível (o projeto usa Supabase, mas qualquer Postgres funciona)
+
+### Passo a passo
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+cd backend
+npm install
 ```
 
-## Run tests
+Copie o arquivo de exemplo de variáveis de ambiente e preencha os valores reais:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp .env.example .env
 ```
 
-## Deployment
+| Variável       | Descrição                                                                 |
+|----------------|-----------------------------------------------------------------------------|
+| `PORT`         | Porta em que o servidor Express sobe (padrão: `3333`)                      |
+| `NODE_ENV`     | `development`, `production` ou `test`                                      |
+| `JWT_SECRET`   | Segredo para assinar tokens JWT — obrigatório, a aplicação não sobe sem ele |
+| `DATABASE_URL` | Connection string do PostgreSQL (formato `postgresql://usuario:senha@host:porta/banco?schema=public`) |
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Gere o Prisma Client e aplique o schema no banco:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npx prisma generate
+npx prisma db push
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Popule o banco com dados iniciais (opcional, útil em desenvolvimento):
 
-## Resources
+```bash
+npm run seed
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+Suba o servidor em modo desenvolvimento (recarrega automaticamente a cada alteração):
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+npm run dev
+```
 
-## Support
+## Scripts disponíveis
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+| Comando         | O que faz                                      |
+|-----------------|-------------------------------------------------|
+| `npm run dev`   | Sobe o servidor em modo desenvolvimento          |
+| `npm run build` | Compila o TypeScript para produção               |
+| `npm run test`  | Roda a suíte de testes (Jest)                    |
+| `npm run seed`  | Popula o banco com dados de exemplo              |
 
-## Stay in touch
+## Testes
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+npm run test
+```
 
-## License
+Os testes usam `NODE_ENV=test` (definido automaticamente em `jest.setup.js`), que silencia os logs do Pino durante a execução. Testes de rota (via Supertest) fazem requisições reais contra o banco configurado em `DATABASE_URL` — não há banco de testes isolado ainda.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Frontend
+
+Ainda não iniciado. Planejado em **Next.js + TypeScript**, consumindo a API REST deste backend.
+
+## Roadmap
+
+- [x] Módulos de backend: funcionários, pontos, aprovações, dashboard, relatórios
+- [x] Autenticação (JWT)
+- [x] Tratamento de erros centralizado e logs estruturados
+- [x] Suíte de testes automatizados
+- [ ] Documentação da API (Swagger)
+- [ ] Frontend (Next.js)
+- [ ] Reconhecimento facial automático (atualmente a foto é só de auditoria/registro)
+- [ ] Migração de upload de arquivos para Cloudflare R2

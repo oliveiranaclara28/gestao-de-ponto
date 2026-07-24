@@ -32,11 +32,49 @@ export const funcionariosRepository = {
   listarTodos: () => {
     return prisma.funcionario.findMany({
       orderBy: { criadoEm: 'desc' },
+      select: {
+        id: true,
+        nome: true,
+        cpf: true,
+        email: true,
+        telefone: true,
+        endereco: true,
+        matricula: true,
+        cargo: true,
+        estabelecimento: true,
+        dataAdmissao: true,
+        salario: true,
+        papel: true,
+        status: true,
+        gestorId: true,
+        criadoEm: true,
+        atualizadoEm: true,
+      },
     });
   },
 
   buscarPorId: (id: string) => {
-    return prisma.funcionario.findUnique({ where: { id } });
+    return prisma.funcionario.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        nome: true,
+        cpf: true,
+        email: true,
+        telefone: true,
+        endereco: true,
+        matricula: true,
+        cargo: true,
+        estabelecimento: true,
+        dataAdmissao: true,
+        salario: true,
+        papel: true,
+        status: true,
+        gestorId: true,
+        criadoEm: true,
+        atualizadoEm: true,
+      },
+    });
   },
 
   buscarPorEmail: (email: string) => {
