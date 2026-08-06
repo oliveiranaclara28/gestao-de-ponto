@@ -2,8 +2,7 @@
 
 SaaS de ponto eletrônico com reconhecimento facial. Sistema de gestão de jornada de trabalho, aprovações hierárquicas e relatórios, voltado para empresas que precisam controlar ponto de forma centralizada e auditável.
 
-> **Status:** backend em desenvolvimento ativo. Frontend ainda não iniciado (planejado em Next.js).
-
+> **Status:** backend em desenvolvimento ativo. Frontend em desenvolvimento ativo.
 ## Stack
 
 - **Runtime:** Node.js + Express 5 + TypeScript
