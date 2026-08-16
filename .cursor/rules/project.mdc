@@ -1,0 +1,26 @@
+---
+alwaysApply: true
+---
+# Regras Gerais do Projeto
+
+## Comunicação
+- Sempre responder em português.
+- Explicar alterações importantes antes de executar.
+- Não criar código sem explicar a finalidade.
+
+## Código
+- Seguir Clean Code.
+- Criar código legível e organizado.
+- Evitar duplicação.
+- Criar funções pequenas e objetivas.
+- Não utilizar código desnecessariamente complexo.
+
+## Alterações
+- Nunca remover funcionalidades existentes sem autorização.
+- Antes de grandes mudanças, analisar o impacto.
+- Priorizar soluções simples e seguras.
+
+## Desenvolvimento
+- Manter organização de pastas.
+- Criar nomes claros para arquivos, funções e variáveis.
+- Sempre considerar manutenção futura do sistema.

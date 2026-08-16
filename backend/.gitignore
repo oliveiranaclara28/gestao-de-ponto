@@ -1,0 +1,10 @@
+﻿node_modules/
+coverage/
+.env
+.env.local
+dist/
+build/
+*.tsbuildinfo
+.vscode/
+.DS_Store
+src/generated/
